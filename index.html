@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Hero Section -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 mb-4">
+                <i class="fas fa-shield-alt text-primary me-3"></i>
+                Secure Code Analyzer
+            </h1>
+            <p class="lead mb-4">
+                Detect security vulnerabilities in your PHP and JavaScript code with automated static analysis.
+                Get detailed reports with remediation suggestions based on OWASP guidelines.
+            </p>
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-upload me-2"></i>Analyze Code
+                </a>
+                <a href="{{ url_for('list_reports') }}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-list me-2"></i>View Reports
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="row my-5">
+        <div class="col-12">
+            <h2 class="text-center mb-5">Security Analysis Features</h2>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bug fa-3x text-danger mb-3"></i>
+                    <h5 class="card-title">Vulnerability Detection</h5>
+                    <p class="card-text">
+                        Detects SQL injection, XSS, command injection, weak cryptography, 
+                        and other common security vulnerabilities.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Security Scoring</h5>
+                    <p class="card-text">
+                        Get an overall security score for your code with detailed 
+                        breakdown by vulnerability severity levels.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-tools fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Remediation Guidance</h5>
+                    <p class="card-text">
+                        Receive specific remediation suggestions and secure coding 
+                        practices to fix identified vulnerabilities.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reports -->
+    {% if recent_reports %}
+    <div class="row my-5">
+        <div class="col-12">
+            <h3 class="mb-4">Recent Analysis Reports</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Type</th>
+                            <th>Security Score</th>
+                            <th>Vulnerabilities</th>
+                            <th>Analysis Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recent_reports %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-file-code me-2"></i>
+                                {{ report.filename }}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if report.file_type == 'php' else 'info' }}">
+                                    {{ report.file_type.upper() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 100px;">
+                                        <div class="progress-bar 
+                                            {% if report.security_score >= 80 %}bg-success
+                                            {% elif report.security_score >= 60 %}bg-warning
+                                            {% elif report.security_score >= 40 %}bg-danger
+                                            {% else %}bg-dark{% endif %}" 
+                                            style="width: {{ report.security_score }}%">
+                                        </div>
+                                    </div>
+                                    <small>{{ report.security_score }}%</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if report.total_vulnerabilities > 0 %}
+                                    <span class="badge bg-danger">{{ report.total_vulnerabilities }}</span>
+                                {% else %}
+                                    <span class="badge bg-success">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ report.analysis_time.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('view_results', report_id=report.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </a>
+                                <a href="{{ url_for('get_report_json', report_id=report.id) }}" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-download me-1"></i>JSON
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistics -->
+    <div class="row my-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Supported Vulnerability Types</h3>
+        </div>
+        <div class="col-lg-6">
+            <h5><i class="fab fa-php me-2 text-warning"></i>PHP Vulnerabilities</h5>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    SQL Injection
+                    <span class="badge bg-danger">Critical</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Cross-Site Scripting (XSS)
+                    <span class="badge bg-warning">High</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    File Inclusion
+                    <span class="badge bg-danger">Critical</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Command Injection
+                    <span class="badge bg-danger">Critical</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Weak Cryptography
+                    <span class="badge bg-info">Medium</span>
+                </li>
+            </ul>
+        </div>
+        <div class="col-lg-6">
+            <h5><i class="fab fa-js-square me-2 text-warning"></i>JavaScript Vulnerabilities</h5>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    DOM-based XSS
+                    <span class="badge bg-warning">High</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Code Injection (eval)
+                    <span class="badge bg-danger">Critical</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Open Redirect
+                    <span class="badge bg-info">Medium</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Weak Random Generation
+                    <span class="badge bg-info">Medium</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Data Exposure
+                    <span class="badge bg-info">Medium</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - {{ report.filename }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Report Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="fas fa-file-code me-2"></i>
+                        {{ report.filename }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Analysis completed on {{ report.analysis_time.strftime('%Y-%m-%d at %H:%M') }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('get_report_json', report_id=report.id) }}" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-download me-2"></i>Export JSON
+                    </a>
+                    <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Analyze Another File
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Score and Summary -->
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Security Score</h5>
+                    <div class="mb-3">
+                        <div class="security-score-circle mx-auto" 
+                             data-score="{{ report.security_score }}">
+                            <span class="score-text">{{ report.security_score }}%</span>
+                        </div>
+                    </div>
+                    <p class="card-text">
+                        {% if report.security_score >= 80 %}
+                            <span class="badge bg-success">Low Risk</span>
+                        {% elif report.security_score >= 60 %}
+                            <span class="badge bg-warning">Medium Risk</span>
+                        {% elif report.security_score >= 40 %}
+                            <span class="badge bg-danger">High Risk</span>
+                        {% else %}
+                            <span class="badge bg-dark">Critical Risk</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Vulnerability Summary</h5>
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="border-end">
+                                <h3 class="text-danger">{{ report.critical_count }}</h3>
+                                <small class="text-muted">Critical</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="border-end">
+                                <h3 class="text-warning">{{ report.high_count }}</h3>
+                                <small class="text-muted">High</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="border-end">
+                                <h3 class="text-info">{{ report.medium_count }}</h3>
+                                <small class="text-muted">Medium</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-secondary">{{ report.low_count }}</h3>
+                            <small class="text-muted">Low</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>File Type:</strong> 
+                            <span class="badge bg-{{ 'warning' if report.file_type == 'php' else 'info' }}">
+                                {{ report.file_type.upper() }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>File Size:</strong> {{ "%.1f"|format(report.file_size / 1024) }} KB
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vulnerabilities List -->
+    {% if vulnerabilities %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bug me-2"></i>
+                        Detected Vulnerabilities ({{ report.total_vulnerabilities }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="vulnerabilitiesAccordion">
+                        {% for vuln in vulnerabilities %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                <button class="accordion-button {% if loop.index > 1 %}collapsed{% endif %}" 
+                                        type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ loop.index }}">
+                                    <div class="d-flex justify-content-between w-100 me-3">
+                                        <div>
+                                            <span class="badge bg-{% if vuln.severity == 'critical' %}danger
+                                                        {% elif vuln.severity == 'high' %}warning
+                                                        {% elif vuln.severity == 'medium' %}info
+                                                        {% else %}secondary{% endif %} me-2">
+                                                {{ vuln.severity.title() }}
+                                            </span>
+                                            <strong>{{ vuln.message }}</strong>
+
+                                            {% if vuln.source %}
+                                            <span class="badge bg-secondary ms-2">
+                                                {{ vuln.source }}
+                                            </span>
+                                        {% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+                                        </div>
+                                        <small class="text-muted">Line {{ vuln.line }}</small>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ loop.index }}" 
+                                 class="accordion-collapse collapse {% if loop.index == 1 %}show{% endif %}" 
+                                 data-bs-parent="#vulnerabilitiesAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-info-circle me-2"></i>Details</h6>
+                                            <p><strong>Type:</strong> {{ vuln.type.replace('_', ' ').title() }}</p>
+                                            <p><strong>Location:</strong> Line {{ vuln.line }}, Column {{ vuln.column }}</p>
+                                            {% if vuln.cwe_id %}
+                                            <p><strong>CWE ID:</strong> {{ vuln.cwe_id }}</p>
+                                            {% endif %}
+                                            {% if vuln.owasp_category %}
+                                            <p><strong>OWASP Category:</strong> {{ vuln.owasp_category }}</p>
+                                            {% endif %}
+                                            
+                                            <h6><i class="fas fa-code me-2"></i>Vulnerable Code</h6>
+                                            <pre class="bg-dark p-3 rounded"><code class="language-{{ 'php' if report.file_type == 'php' else 'javascript' }}">{{ vuln.code }}</code></pre>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Description</h6>
+                                            <p>{{ vuln.description }}</p>
+                                            
+                                            <h6><i class="fas fa-tools me-2"></i>Remediation</h6>
+                                            <div class="alert alert-success">
+                                                {{ vuln.remediation }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4>No Vulnerabilities Detected</h4>
+                    <p class="text-muted">
+                        Great! No obvious security vulnerabilities were found in your code. 
+                        However, remember that automated analysis cannot catch all security issues.
+                    </p>
+                    <div class="alert alert-info">
+                        <strong>Recommendations:</strong>
+                        <ul class="list-unstyled mb-0">
+                            <li>• Continue following secure coding practices</li>
+                            <li>• Regular security code reviews</li>
+                            <li>• Keep dependencies up to date</li>
+                            <li>• Implement proper input validation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommendations -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Security Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Immediate Actions</h6>
+                            <ul>
+                                {% if report.critical_count > 0 %}
+                                <li class="text-danger">Address all critical vulnerabilities immediately</li>
+                                {% endif %}
+                                {% if report.high_count > 0 %}
+                                <li class="text-warning">Fix high-severity issues as soon as possible</li>
+                                {% endif %}
+                                <li>Implement automated security testing in CI/CD</li>
+                                <li>Regular security code reviews</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Long-term Improvements</h6>
+                            <ul>
+                                <li>Follow OWASP secure coding guidelines</li>
+                                <li>Keep frameworks and dependencies updated</li>
+                                <li>Implement proper logging and monitoring</li>
+                                <li>Regular penetration testing</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize security score circle
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreElement = document.querySelector('.security-score-circle');
+    if (scoreElement) {
+        const score = parseFloat(scoreElement.dataset.score);
+        const circumference = 2 * Math.PI * 45; // radius = 45
+        const offset = circumference - (score / 100) * circumference;
+        
+        // Create SVG circle
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '120');
+        svg.setAttribute('height', '120');
+        svg.style.transform = 'rotate(-90deg)';
+        
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '60');
+        circle.setAttribute('cy', '60');
+        circle.setAttribute('r', '45');
+        circle.setAttribute('stroke', '#e9ecef');
+        circle.setAttribute('stroke-width', '8');
+        circle.setAttribute('fill', 'transparent');
+        
+        const progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        progressCircle.setAttribute('cx', '60');
+        progressCircle.setAttribute('cy', '60');
+        progressCircle.setAttribute('r', '45');
+        progressCircle.setAttribute('stroke', score >= 80 ? '#28a745' : score >= 60 ? '#ffc107' : score >= 40 ? '#dc3545' : '#6c757d');
+        progressCircle.setAttribute('stroke-width', '8');
+        progressCircle.setAttribute('fill', 'transparent');
+        progressCircle.setAttribute('stroke-dasharray', circumference);
+        progressCircle.setAttribute('stroke-dashoffset', offset);
+        progressCircle.style.transition = 'stroke-dashoffset 1s ease-in-out';
+        
+        svg.appendChild(circle);
+        svg.appendChild(progressCircle);
+        
+        scoreElement.style.position = 'relative';
+        scoreElement.style.width = '120px';
+        scoreElement.style.height = '120px';
+        scoreElement.appendChild(svg);
+        
+        const scoreText = scoreElement.querySelector('.score-text');
+        scoreText.style.position = 'absolute';
+        scoreText.style.top = '50%';
+        scoreText.style.left = '50%';
+        scoreText.style.transform = 'translate(-50%, -50%)';
+        scoreText.style.fontSize = '1.2rem';
+        scoreText.style.fontWeight = 'bold';
+    }
+});
+</script>
+{% endblock %}

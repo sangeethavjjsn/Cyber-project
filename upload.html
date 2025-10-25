@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Code - Secure Code Analyzer{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload Code for Security Analysis
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                        <div class="mb-4">
+                            <label for="file" class="form-label">Select PHP or JavaScript file:</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".php,.js" required>
+                            <div class="form-text">
+                                Supported file types: .php, .js (Max size: 16MB)
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>What we analyze:</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Security Vulnerabilities:</strong> SQL injection, XSS, command injection, file inclusion</li>
+                                    <li><strong>Cryptographic Issues:</strong> Weak algorithms, insecure random generation</li>
+                                    <li><strong>Code Quality:</strong> Unsafe functions, information disclosure risks</li>
+                                    <li><strong>OWASP Compliance:</strong> Checks against OWASP Top 10 vulnerabilities</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-search me-2"></i>
+                                Analyze Code
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload progress indicator -->
+            <div class="card mt-4 d-none" id="progressCard">
+                <div class="card-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Analyzing...</span>
+                    </div>
+                    <h5>Analyzing your code...</h5>
+                    <p class="text-muted">This may take a few moments depending on file size and complexity.</p>
+                </div>
+            </div>
+
+            <!-- Analysis process info -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <h4 class="mb-4">Analysis Process</h4>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file-upload fa-2x text-primary mb-3"></i>
+                            <h6>1. File Upload</h6>
+                            <p class="card-text text-muted">
+                                Secure upload and validation of your PHP or JavaScript files.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-cogs fa-2x text-warning mb-3"></i>
+                            <h6>2. Static Analysis</h6>
+                            <p class="card-text text-muted">
+                                Pattern matching and AST parsing to identify security vulnerabilities.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-bar fa-2x text-success mb-3"></i>
+                            <h6>3. Report Generation</h6>
+                            <p class="card-text text-muted">
+                                Detailed security report with scoring and remediation guidance.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security tips -->
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Security Best Practices
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Input Validation</h6>
+                            <ul class="text-muted">
+                                <li>Always validate and sanitize user inputs</li>
+                                <li>Use prepared statements for database queries</li>
+                                <li>Implement proper output encoding</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Secure Coding</h6>
+                            <ul class="text-muted">
+                                <li>Use strong cryptographic algorithms</li>
+                                <li>Avoid eval() and similar dangerous functions</li>
+                                <li>Implement proper error handling</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('progressCard').classList.remove('d-none');
+    document.querySelector('.card').style.opacity = '0.7';
+});
+
+// File input validation
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const allowedTypes = ['php', 'js'];
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedTypes.includes(fileExtension)) {
+            alert('Please select a PHP (.php) or JavaScript (.js) file.');
+            e.target.value = '';
+            return;
+        }
+        
+        if (file.size > 16 * 1024 * 1024) {
+            alert('File size must be less than 16MB.');
+            e.target.value = '';
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}
